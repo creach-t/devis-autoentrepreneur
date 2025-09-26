@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Trash2, Save, FileText } from 'lucide-react';
+import { Plus, Trash2, Save, FileText, ArrowLeft } from 'lucide-react';
 import { useAutoSave } from '../hooks/useLocalStorage';
 import { 
   calculateTotaux, 
@@ -27,12 +27,27 @@ import type {
 
 interface DevisFormProps {
   onDevisCreated?: (devis: Devis) => void;
+  onCancel?: () => void;
   initialData?: Partial<DevisFormData>;
+  editingDevis?: Devis; // Nouveau prop pour l'édition
 }
 
-export function DevisForm({ onDevisCreated, initialData }: DevisFormProps) {
+export function DevisForm({ onDevisCreated, onCancel, initialData, editingDevis }: DevisFormProps) {
   // État du formulaire
   const [formData, setFormData] = useState<DevisFormData>(() => {
+    // Si on édite un devis existant, utiliser ses données
+    if (editingDevis) {
+      return {
+        entreprise: editingDevis.entreprise,
+        client: editingDevis.client,
+        prestations: editingDevis.prestations,
+        conditions: editingDevis.conditions,
+        objet: editingDevis.objet || '',
+        commentaires: editingDevis.commentaires || ''
+      };
+    }
+    
+    // Sinon, comportement normal
     const brouillon = getBrouillon();
     const entrepriseDefaut = getEntrepriseDefaut();
     const conditionsDefaut = getConditionsDefaut();
@@ -48,8 +63,8 @@ export function DevisForm({ onDevisCreated, initialData }: DevisFormProps) {
     };
   });
 
-  // Auto-sauvegarde toutes les 2 secondes
-  useAutoSave('devis-brouillon', formData, 2000);
+  // Auto-sauvegarde seulement si on n'édite pas un devis existant
+  useAutoSave('devis-brouillon', !editingDevis ? formData : null, 2000);
 
   // Calculs automatiques
   const totaux = calculateTotaux(formData.prestations, formData.conditions as Conditions);
@@ -121,45 +136,87 @@ export function DevisForm({ onDevisCreated, initialData }: DevisFormProps) {
       return;
     }
 
-    const devis: Devis = {
-      id: crypto.randomUUID(),
-      numero: generateNumeroDevis(),
-      dateCreation: new Date(),
-      dateValidite: new Date(Date.now() + (formData.conditions?.validite || 30) * 24 * 60 * 60 * 1000),
-      statut: 'Brouillon',
-      entreprise: formData.entreprise as Entreprise,
-      client: formData.client as Client,
-      prestations: formData.prestations,
-      conditions: formData.conditions as Conditions,
-      totaux,
-      objet: formData.objet,
-      commentaires: formData.commentaires,
-      dateModification: new Date(),
-      version: 1
-    };
+    let devis: Devis;
+
+    if (editingDevis) {
+      // Mise à jour d'un devis existant
+      devis = {
+        ...editingDevis,
+        entreprise: formData.entreprise as Entreprise,
+        client: formData.client as Client,
+        prestations: formData.prestations,
+        conditions: formData.conditions as Conditions,
+        totaux,
+        objet: formData.objet,
+        commentaires: formData.commentaires,
+        dateModification: new Date(),
+        version: editingDevis.version + 1
+      };
+    } else {
+      // Création d'un nouveau devis
+      devis = {
+        id: crypto.randomUUID(),
+        numero: generateNumeroDevis(),
+        dateCreation: new Date(),
+        dateValidite: new Date(Date.now() + (formData.conditions?.validite || 30) * 24 * 60 * 60 * 1000),
+        statut: 'Brouillon',
+        entreprise: formData.entreprise as Entreprise,
+        client: formData.client as Client,
+        prestations: formData.prestations,
+        conditions: formData.conditions as Conditions,
+        totaux,
+        objet: formData.objet,
+        commentaires: formData.commentaires,
+        dateModification: new Date(),
+        version: 1
+      };
+    }
 
     saveDevis(devis);
-    clearBrouillon();
+    
+    if (!editingDevis) {
+      clearBrouillon();
+    }
+    
     onDevisCreated?.(devis);
     
-    // Reset du formulaire
-    setFormData({
-      entreprise: getEntrepriseDefaut() || {},
-      client: {},
-      prestations: [],
-      conditions: getConditionsDefaut() || {},
-      objet: '',
-      commentaires: ''
-    });
+    // Reset du formulaire seulement pour nouveau devis
+    if (!editingDevis) {
+      setFormData({
+        entreprise: getEntrepriseDefaut() || {},
+        client: {},
+        prestations: [],
+        conditions: getConditionsDefaut() || {},
+        objet: '',
+        commentaires: ''
+      });
+    }
 
-    alert(`Devis ${devis.numero} sauvegardé !`);
+    alert(`Devis ${devis.numero} ${editingDevis ? 'mis à jour' : 'sauvegardé'} !`);
   };
 
   return (
     <div className="max-w-4xl mx-auto p-6 bg-white">
       <div className="mb-8">
-        <h1 className="text-3xl font-bold text-gray-800 mb-2">Nouveau Devis</h1>
-        <p className="text-gray-600">Créez votre devis en quelques clics</p>
+        <div className="flex items-center gap-4 mb-4">
+          {onCancel && (
+            <button
+              onClick={onCancel}
+              className="flex items-center gap-2 text-gray-600 hover:text-gray-800"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              Retour
+            </button>
+          )}
+          <div>
+            <h1 className="text-3xl font-bold text-gray-800">
+              {editingDevis ? `Modifier le devis ${editingDevis.numero}` : 'Nouveau Devis'}
+            </h1>
+            <p className="text-gray-600">
+              {editingDevis ? 'Modifiez les informations du devis' : 'Créez votre devis en quelques clics'}
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Section Entreprise */}
@@ -333,6 +390,23 @@ export function DevisForm({ onDevisCreated, initialData }: DevisFormProps) {
         </div>
       </section>
 
+      {/* Section Objet */}
+      <section className="mb-8 p-6 border border-gray-200 rounded-lg">
+        <h2 className="text-xl font-semibold mb-4 text-orange-600">Objet du devis</h2>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Objet (optionnel)
+          </label>
+          <input
+            type="text"
+            value={formData.objet || ''}
+            onChange={(e) => setFormData(prev => ({ ...prev, objet: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+            placeholder="Ex: Développement site web, Formation..."
+          />
+        </div>
+      </section>
+
       {/* Section Prestations */}
       <section className="mb-8 p-6 border border-gray-200 rounded-lg">
         <div className="flex justify-between items-center mb-4">
@@ -445,6 +519,27 @@ export function DevisForm({ onDevisCreated, initialData }: DevisFormProps) {
         )}
       </section>
 
+      {/* Section Commentaires */}
+      <section className="mb-8 p-6 border border-gray-200 rounded-lg">
+        <h2 className="text-xl font-semibold mb-4 text-indigo-600">Commentaires</h2>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Commentaires additionnels (optionnel)
+          </label>
+          <textarea
+            value={formData.commentaires || ''}
+            onChange={(e) => setFormData(prev => ({ ...prev, commentaires: e.target.value }))}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            rows={4}
+            placeholder="Notes, conditions particulières, informations complémentaires..."
+            maxLength={1000}
+          />
+          <div className="text-xs text-gray-500 mt-1">
+            {(formData.commentaires || '').length}/1000 caractères
+          </div>
+        </div>
+      </section>
+
       {/* Récapitulatif */}
       <section className="mb-8 p-6 border border-gray-200 rounded-lg bg-gray-50">
         <h2 className="text-xl font-semibold mb-4 text-orange-600">Récapitulatif</h2>
@@ -466,20 +561,22 @@ export function DevisForm({ onDevisCreated, initialData }: DevisFormProps) {
 
       {/* Actions */}
       <div className="flex gap-4 justify-end">
-        <button
-          onClick={() => saveBrouillon(formData)}
-          className="flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
-        >
-          <Save className="w-4 h-4" />
-          Sauvegarder brouillon
-        </button>
+        {!editingDevis && (
+          <button
+            onClick={() => saveBrouillon(formData)}
+            className="flex items-center gap-2 px-6 py-3 bg-gray-600 text-white rounded-md hover:bg-gray-700 transition-colors"
+          >
+            <Save className="w-4 h-4" />
+            Sauvegarder brouillon
+          </button>
+        )}
         
         <button
           onClick={saveAsDevis}
           className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
         >
           <FileText className="w-4 h-4" />
-          Créer le devis
+          {editingDevis ? 'Mettre à jour le devis' : 'Créer le devis'}
         </button>
       </div>
     </div>
