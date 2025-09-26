@@ -1,43 +1,58 @@
 import React, { useState } from 'react';
-import { FileText, History, Eye, Settings } from 'lucide-react';
+import { FileText, History, Eye, Settings as SettingsIcon } from 'lucide-react';
 import { DevisForm } from './components/DevisForm';
 import { DevisPreview } from './components/DevisPreview';
 import { DevisHistory } from './components/DevisHistory';
+import { DevisExport } from './components/DevisExport';
+import { Settings } from './components/Settings';
 import type { Devis } from './types/devis';
 
-type AppView = 'form' | 'preview' | 'history' | 'settings';
+type AppView = 'form' | 'preview' | 'history' | 'settings' | 'edit';
 
 function App() {
   const [currentView, setCurrentView] = useState<AppView>('form');
   const [selectedDevis, setSelectedDevis] = useState<Devis | null>(null);
+  const [editingDevis, setEditingDevis] = useState<Devis | null>(null);
 
   const handleDevisCreated = (devis: Devis) => {
     setSelectedDevis(devis);
+    setEditingDevis(null);
     setCurrentView('preview');
   };
 
   const handleViewDevis = (devis: Devis) => {
     setSelectedDevis(devis);
+    setEditingDevis(null);
     setCurrentView('preview');
   };
 
   const handleEditDevis = (devis: Devis) => {
-    // TODO: Implémenter l'édition d'un devis existant
-    console.log('Edit devis:', devis.numero);
-    setCurrentView('form');
+    setEditingDevis(devis);
+    setSelectedDevis(null);
+    setCurrentView('edit');
   };
 
   const handleExportDevis = (devis: Devis) => {
-    // TODO: Implémenter l'export PDF
-    console.log('Export devis:', devis.numero);
-    window.print();
+    setSelectedDevis(devis);
+    setCurrentView('preview');
+    // L'export PDF sera déclenché depuis le composant DevisExport
+  };
+
+  const handleCancelEdit = () => {
+    setEditingDevis(null);
+    setCurrentView('history');
+  };
+
+  const handleBackToHistory = () => {
+    setSelectedDevis(null);
+    setCurrentView('history');
   };
 
   const navigationItems = [
     { id: 'form', label: 'Nouveau Devis', icon: FileText },
     { id: 'history', label: 'Historique', icon: History },
-    { id: 'preview', label: 'Aperçu', icon: Eye, disabled: !selectedDevis },
-    { id: 'settings', label: 'Paramètres', icon: Settings }
+    { id: 'preview', label: 'Aperçu', icon: Eye, disabled: !selectedDevis && currentView !== 'preview' },
+    { id: 'settings', label: 'Paramètres', icon: SettingsIcon }
   ];
 
   return (
@@ -63,7 +78,7 @@ function App() {
                   onClick={() => !disabled && setCurrentView(id as AppView)}
                   disabled={disabled}
                   className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors ${
-                    currentView === id
+                    currentView === id || (currentView === 'edit' && id === 'form')
                       ? 'border-blue-500 text-blue-600'
                       : disabled
                       ? 'border-transparent text-gray-300 cursor-not-allowed'
@@ -81,26 +96,25 @@ function App() {
 
       {/* Contenu principal */}
       <main className="py-6">
-        {currentView === 'form' && (
-          <DevisForm onDevisCreated={handleDevisCreated} />
+        {(currentView === 'form' || currentView === 'edit') && (
+          <DevisForm 
+            onDevisCreated={handleDevisCreated}
+            onCancel={currentView === 'edit' ? handleCancelEdit : undefined}
+            editingDevis={editingDevis || undefined}
+          />
         )}
         
         {currentView === 'preview' && selectedDevis && (
           <div className="max-w-4xl mx-auto px-4">
             <div className="mb-4 flex justify-between items-center">
               <button
-                onClick={() => setCurrentView('history')}
+                onClick={handleBackToHistory}
                 className="text-blue-600 hover:text-blue-800 text-sm"
               >
                 ← Retour à l'historique
               </button>
-              <div className="space-x-2">
-                <button
-                  onClick={() => handleExportDevis(selectedDevis)}
-                  className="px-4 py-2 bg-purple-600 text-white rounded-md hover:bg-purple-700 transition-colors"
-                >
-                  Exporter PDF
-                </button>
+              <div className="flex items-center space-x-4">
+                <DevisExport devis={selectedDevis} />
                 <button
                   onClick={() => handleEditDevis(selectedDevis)}
                   className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors"
@@ -122,64 +136,7 @@ function App() {
         )}
         
         {currentView === 'settings' && (
-          <div className="max-w-4xl mx-auto px-4">
-            <div className="bg-white p-8 rounded-lg shadow">
-              <h2 className="text-2xl font-bold mb-6">Paramètres</h2>
-              <div className="space-y-6">
-                <div className="p-4 bg-blue-50 rounded-lg">
-                  <h3 className="text-lg font-semibold text-blue-800 mb-2">
-                    Entreprise par défaut
-                  </h3>
-                  <p className="text-blue-700 text-sm mb-3">
-                    Configurez les informations de votre entreprise pour les pré-remplir automatiquement.
-                  </p>
-                  <button className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
-                    Configurer
-                  </button>
-                </div>
-                
-                <div className="p-4 bg-green-50 rounded-lg">
-                  <h3 className="text-lg font-semibold text-green-800 mb-2">
-                    Conditions par défaut
-                  </h3>
-                  <p className="text-green-700 text-sm mb-3">
-                    Définissez vos conditions commerciales standard (validité, paiement, etc.).
-                  </p>
-                  <button className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 transition-colors">
-                    Configurer
-                  </button>
-                </div>
-                
-                <div className="p-4 bg-yellow-50 rounded-lg">
-                  <h3 className="text-lg font-semibold text-yellow-800 mb-2">
-                    Sauvegarde des données
-                  </h3>
-                  <p className="text-yellow-700 text-sm mb-3">
-                    Exportez ou importez vos données pour sauvegarder ou transférer vos devis.
-                  </p>
-                  <div className="space-x-2">
-                    <button className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">
-                      Exporter
-                    </button>
-                    <button className="px-4 py-2 bg-yellow-600 text-white rounded-md hover:bg-yellow-700 transition-colors">
-                      Importer
-                    </button>
-                  </div>
-                </div>
-                
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <h3 className="text-lg font-semibold text-gray-800 mb-2">
-                    À propos
-                  </h3>
-                  <p className="text-gray-700 text-sm">
-                    Application de gestion de devis pour auto-entrepreneurs.
-                    <br />
-                    Version 1.0.0 - Toutes les données sont stockées localement dans votre navigateur.
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
+          <Settings />
         )}
       </main>
 
