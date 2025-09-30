@@ -15,7 +15,8 @@ const getDefaultStorageData = (): StorageData => ({
     delaiExecution: '2 semaines',
     conditionsPaiement: 'Paiement à 30 jours',
     modalitesPaiement: ['Virement bancaire', 'Chèque'],
-  }
+  },
+  mentionsPersonnalisees: []
 });
 
 /**
@@ -175,6 +176,21 @@ export const saveConditionsDefaut = (conditions: Conditions): void => {
 export const getConditionsDefaut = (): Conditions | undefined => {
   const data = getStorageData();
   return data.conditionsParDefaut;
+};
+
+/**
+ * Sauvegarde les mentions personnalisées
+ */
+export const saveMentionsPersonnalisees = (mentions: string[]): void => {
+  setStorageData({ mentionsPersonnalisees: mentions });
+};
+
+/**
+ * Récupère les mentions personnalisées
+ */
+export const getMentionsPersonnalisees = (): string[] => {
+  const data = getStorageData();
+  return data.mentionsPersonnalisees || [];
 };
 
 /**
