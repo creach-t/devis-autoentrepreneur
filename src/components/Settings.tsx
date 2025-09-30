@@ -9,7 +9,7 @@ import {
   getStorageUsage,
   cleanOldDevis
 } from '../utils/storage';
-import type { Entreprise, Conditions } from '../../types/devis';
+import type { Entreprise, Conditions } from '../types/devis';
 import { TabNavigation, type TabId } from './shared/TabNavigation';
 import { EntrepriseTab } from './tabs/EntrepriseTab';
 import { ConditionsTab } from './tabs/ConditionsTab';
@@ -196,9 +196,7 @@ export function Settings() {
 
       {activeTab === 'clauses' && (
         <ClausesLegalesTab
-          conditions={conditions}
-          setConditions={setConditions}
-          onSave={saveConditions}
+          onSave={() => loadData()}
         />
       )}
 
