@@ -1,6 +1,7 @@
 import React from 'react';
 import { Download, Eye, Printer } from 'lucide-react';
 import { formatCurrency, getTVABreakdown } from '../utils/calculations';
+import { getMentionsPersonnalisees } from '../utils/storage';
 import type { Devis } from '../types/devis';
 
 interface DevisExportProps {
@@ -190,9 +191,15 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         y += 10;
       }
 
-      // Conditions
+      // Conditions (seulement les infos pratiques)
       if (devis.conditions) {
         y += 10;
+        
+        if (y > pageHeight - 60) {
+          doc.addPage();
+          y = 20;
+        }
+        
         doc.setFontSize(11);
         doc.setTextColor(200, 150, 0);
         doc.text('CONDITIONS', margin, y);
@@ -202,15 +209,18 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         doc.setTextColor(0, 0, 0);
         
         const conditions = [
-          `Validité du devis: ${devis.conditions.validite} jours`,
-          `Délai d'exécution: ${devis.conditions.delaiExecution}`,
-          `Conditions de paiement: ${devis.conditions.conditionsPaiement}`,
+          devis.conditions.delaiExecution && `Délai d'exécution: ${devis.conditions.delaiExecution}`,
+          devis.conditions.conditionsPaiement && `Conditions de paiement: ${devis.conditions.conditionsPaiement}`,
           devis.conditions.modalitesPaiement?.length > 0 && 
             `Modalités de paiement: ${devis.conditions.modalitesPaiement.join(', ')}`
         ].filter(Boolean);
 
         conditions.forEach(condition => {
           if (condition) {
+            if (y > pageHeight - 40) {
+              doc.addPage();
+              y = 20;
+            }
             doc.text(condition, margin, y);
             y += 6;
           }
@@ -220,6 +230,12 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       // Commentaires
       if (devis.commentaires) {
         y += 10;
+        
+        if (y > pageHeight - 40) {
+          doc.addPage();
+          y = 20;
+        }
+        
         doc.setFontSize(11);
         doc.setTextColor(0, 100, 150);
         doc.text('COMMENTAIRES', margin, y);
@@ -228,10 +244,9 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         doc.setFontSize(9);
         doc.setTextColor(0, 0, 0);
         
-        // Découper les commentaires en lignes
         const commentLines = doc.splitTextToSize(devis.commentaires, pageWidth - 2 * margin);
         commentLines.forEach((line: string) => {
-          if (y > pageHeight - 30) {
+          if (y > pageHeight - 40) {
             doc.addPage();
             y = 20;
           }
@@ -240,24 +255,71 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         });
       }
 
-      // Mentions légales en bas de page
-      const footerY = pageHeight - 30;
-      doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
+      // Mentions légales - vérifier espace disponible
+      const mentionsPersonnalisees = getMentionsPersonnalisees();
+      const nbLignesMentions = 3 + mentionsPersonnalisees.length; // obligatoires + perso
+      const espaceMentions = nbLignesMentions * 4 + 15;
       
-      const mentions = [
-        `Ce devis est valable ${devis.conditions?.validite || 30} jours à compter de sa date d'émission.`,
-        `L'acceptation du présent devis implique l'adhésion entière aux conditions générales de vente.`,
+      if (y > pageHeight - espaceMentions) {
+        doc.addPage();
+        y = 20;
+      } else {
+        y += 15;
+      }
+
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(50, 50, 50);
+      doc.text('MENTIONS LÉGALES', margin, y);
+      y += 7;
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(80, 80, 80);
+      
+      // Mentions obligatoires
+      const mentionsObligatoires = [
+        `• Ce devis est valable ${devis.conditions?.validite || 30} jours à compter de sa date d'émission. L'acceptation implique l'adhésion aux CGV.`,
         devis.entreprise.formeJuridique === 'Auto-entrepreneur' && 
-          'TVA non applicable, art. 293 B du CGI (régime micro-entrepreneur).',
-        'En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d\'intérêt légal seront applicables.'
+          '• TVA non applicable, art. 293 B du CGI (régime micro-entrepreneur).',
+        '• En cas de retard de paiement: pénalités au taux de 3x le taux d\'intérêt légal + indemnité forfaitaire de 40€.'
       ].filter(Boolean);
 
-      mentions.forEach((mention, index) => {
+      mentionsObligatoires.forEach((mention) => {
         if (mention) {
-          doc.text(mention, margin, footerY + index * 4);
+          if (y > pageHeight - 15) {
+            doc.addPage();
+            y = 20;
+          }
+          const lines = doc.splitTextToSize(mention, pageWidth - 2 * margin);
+          lines.forEach((line: string) => {
+            doc.text(line, margin, y);
+            y += 4;
+          });
         }
       });
+
+      // Mentions personnalisées si présentes
+      if (mentionsPersonnalisees.length > 0) {
+        y += 3;
+        
+        if (y > pageHeight - 15) {
+          doc.addPage();
+          y = 20;
+        }
+
+        mentionsPersonnalisees.forEach((mention) => {
+          if (y > pageHeight - 15) {
+            doc.addPage();
+            y = 20;
+          }
+          const lines = doc.splitTextToSize(`• ${mention}`, pageWidth - 2 * margin);
+          lines.forEach((line: string) => {
+            doc.text(line, margin, y);
+            y += 4;
+          });
+        });
+      }
 
       // Sauvegarder le PDF
       doc.save(`${devis.numero}.pdf`);
