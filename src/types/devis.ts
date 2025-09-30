@@ -42,6 +42,36 @@ export interface Conditions {
     pourcentage: number;
     montantHT: number;
   };
+
+  // Propriété intellectuelle
+  cessionDroitsAuteur?: boolean;
+  conservationDroitsMoraux?: boolean;
+  utilisationCommerciale?: boolean;
+  territoireExploitation?: string;
+  dureeExploitation?: string;
+
+  // Clauses de protection
+  clauseConfidentialite?: boolean;
+  clauseNonConcurrence?: boolean;
+  dureeNonConcurrence?: number;
+
+  // Responsabilité et garanties
+  limitationResponsabilite?: boolean;
+  garantieProfessionnelle?: string;
+  assuranceRC?: boolean;
+
+  // Conditions spécifiques
+  droitRetractation?: boolean;
+  forceExclusive?: boolean;
+  livraisonConformite?: string;
+
+  // RGPD et données
+  traitementDonnees?: boolean;
+  dureeConservation?: string;
+
+  // Résolution litiges
+  droidApplicable?: string;
+  juridictionCompetente?: string;
 }
 
 export interface Totaux {
@@ -59,17 +89,17 @@ export interface Devis {
   dateCreation: Date;
   dateValidite: Date;
   statut: 'Brouillon' | 'Envoyé' | 'Accepté' | 'Refusé' | 'Expiré';
-  
+
   entreprise: Entreprise;
   client: Client;
   prestations: Prestation[];
   conditions: Conditions;
   totaux: Totaux;
-  
+
   // Champs optionnels
   objet?: string;
   commentaires?: string;
-  
+
   // Métadonnées
   dateModification: Date;
   version: number;
@@ -119,6 +149,71 @@ export interface ExportOptions {
   afficherTarifs: boolean;
 }
 
+// Types utilitaires
 export type DevisStatus = Devis['statut'];
 export type UniteMesure = Prestation['uniteMesure'];
 export type TauxTVA = Prestation['tauxTVA'];
+export type FormeJuridique = Entreprise['formeJuridique'];
+
+// Constantes pour les clauses légales par défaut
+export const DEFAULT_CLAUSES_LEGALES: Partial<Conditions> = {
+  cessionDroitsAuteur: false,
+  conservationDroitsMoraux: true,
+  utilisationCommerciale: true,
+  territoireExploitation: 'France',
+  dureeExploitation: 'Illimitée',
+  clauseConfidentialite: true,
+  clauseNonConcurrence: false,
+  dureeNonConcurrence: 12,
+  limitationResponsabilite: true,
+  garantieProfessionnelle: '1 an',
+  assuranceRC: true,
+  droitRetractation: true,
+  forceExclusive: false,
+  livraisonConformite: '30 jours',
+  traitementDonnees: true,
+  dureeConservation: '3 ans',
+  droidApplicable: 'Droit français',
+  juridictionCompetente: 'Tribunaux français'
+} as const;
+
+// Types d'aide pour la validation
+export interface ValidationError {
+  field: string;
+  message: string;
+  code: string;
+}
+
+export interface ValidationResult {
+  isValid: boolean;
+  errors: ValidationError[];
+}
+
+// Types pour les statistiques
+export interface DevisStats {
+  total: number;
+  brouillons: number;
+  envoyes: number;
+  acceptes: number;
+  refuses: number;
+  expires: number;
+  chiffreAffaires: number;
+  tauxAcceptation: number;
+}
+
+// Interface pour la recherche et filtrage
+export interface DevisFilters {
+  statut?: DevisStatus | 'Tous';
+  client?: string;
+  dateDebut?: Date;
+  dateFin?: Date;
+  montantMin?: number;
+  montantMax?: number;
+}
+
+export interface SearchOptions {
+  query: string;
+  filters: DevisFilters;
+  sortBy: 'date' | 'numero' | 'client' | 'montant';
+  sortOrder: 'asc' | 'desc';
+}
