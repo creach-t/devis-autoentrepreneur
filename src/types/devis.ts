@@ -43,6 +43,9 @@ export interface Conditions {
     montantHT: number;
   };
 
+  // Mentions légales personnalisées
+  mentionsPersonnalisees?: string[];
+
   // Propriété intellectuelle
   cessionDroitsAuteur?: boolean;
   conservationDroitsMoraux?: boolean;
@@ -120,6 +123,7 @@ export interface StorageData {
   brouillonCourant?: DevisFormData;
   entrepriseParDefaut?: Entreprise;
   conditionsParDefaut?: Conditions;
+  mentionsPersonnalisees?: string[];
   dernierNumero: number;
 }
 
