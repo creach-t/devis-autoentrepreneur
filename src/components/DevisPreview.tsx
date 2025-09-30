@@ -245,33 +245,27 @@ export function DevisPreview({ devis, formData, showHeader = true }: DevisPrevie
         </div>
       </div>
 
-      {/* Conditions */}
+      {/* Conditions - UNIQUEMENT les infos pratiques */}
       {data.conditions && (
         <div className="mb-8 p-6 bg-yellow-50 rounded-lg border border-yellow-200">
           <h3 className="text-lg font-semibold text-yellow-800 mb-4">Conditions</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-            {data.conditions.validite && (
-              <div>
-                <span className="font-medium">Validité du devis:</span>
-                <div>{data.conditions.validite} jours</div>
-              </div>
-            )}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-3 text-sm">
             {data.conditions.delaiExecution && (
               <div>
-                <span className="font-medium">Délai d'exécution:</span>
-                <div>{data.conditions.delaiExecution}</div>
+                <span className="font-medium text-gray-700">Délai d'exécution:</span>
+                <span className="ml-2 text-gray-600">{data.conditions.delaiExecution}</span>
               </div>
             )}
             {data.conditions.conditionsPaiement && (
               <div>
-                <span className="font-medium">Conditions de paiement:</span>
-                <div>{data.conditions.conditionsPaiement}</div>
+                <span className="font-medium text-gray-700">Conditions de paiement:</span>
+                <span className="ml-2 text-gray-600">{data.conditions.conditionsPaiement}</span>
               </div>
             )}
             {data.conditions.modalitesPaiement && data.conditions.modalitesPaiement.length > 0 && (
-              <div>
-                <span className="font-medium">Modalités de paiement:</span>
-                <div>{data.conditions.modalitesPaiement.join(', ')}</div>
+              <div className="md:col-span-2">
+                <span className="font-medium text-gray-700">Modalités acceptées:</span>
+                <span className="ml-2 text-gray-600">{data.conditions.modalitesPaiement.join(', ')}</span>
               </div>
             )}
           </div>
@@ -282,42 +276,39 @@ export function DevisPreview({ devis, formData, showHeader = true }: DevisPrevie
       {data.commentaires && (
         <div className="mb-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
           <h3 className="text-lg font-semibold text-blue-800 mb-2">Commentaires</h3>
-          <div className="text-sm whitespace-pre-wrap">{data.commentaires}</div>
+          <div className="text-sm whitespace-pre-wrap text-gray-700">{data.commentaires}</div>
         </div>
       )}
 
-      {/* Mentions légales */}
+      {/* Mentions légales - SEULEMENT légales, pas de doublon */}
       <div className="border-t pt-6 text-xs text-gray-500 space-y-2">
-        <p className="font-semibold text-gray-700">
-          Mentions légales obligatoires:
+        <p className="font-semibold text-gray-700 text-sm">
+          Mentions légales
         </p>
         
         {/* Mentions obligatoires */}
         <div className="space-y-1.5">
           <p>
-            Ce devis est valable {data.conditions?.validite || 30} jours à compter de sa date d'émission.
+            • Ce devis est valable {data.conditions?.validite || 30} jours à compter de sa date d'émission. 
             L'acceptation du présent devis implique l'adhésion entière aux conditions générales de vente.
           </p>
           {data.entreprise.formeJuridique === 'Auto-entrepreneur' && (
             <p>
-              TVA non applicable, art. 293 B du CGI (régime micro-entrepreneur).
+              • TVA non applicable, art. 293 B du CGI (régime micro-entrepreneur).
             </p>
           )}
           <p>
-            En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal 
+            • En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal 
             seront applicables, ainsi qu'une indemnité forfaitaire de 40€ pour frais de recouvrement.
           </p>
         </div>
 
         {/* Mentions personnalisées */}
         {mentionsPersonnalisees.length > 0 && (
-          <div className="mt-4 pt-3 border-t border-gray-300">
-            <p className="font-semibold text-gray-700 mb-2">
-              Mentions complémentaires:
-            </p>
+          <div className="mt-3 pt-3 border-t border-gray-300">
             <div className="space-y-1.5">
               {mentionsPersonnalisees.map((mention, index) => (
-                <p key={index}>{mention}</p>
+                <p key={index}>• {mention}</p>
               ))}
             </div>
           </div>
