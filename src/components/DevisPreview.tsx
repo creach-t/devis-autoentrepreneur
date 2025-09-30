@@ -1,5 +1,6 @@
 import React from 'react';
 import { formatCurrency, getTVABreakdown } from '../utils/calculations';
+import { getMentionsPersonnalisees } from '../utils/storage';
 import type { Devis, DevisFormData } from '../types/devis';
 
 interface DevisPreviewProps {
@@ -28,6 +29,7 @@ export function DevisPreview({ devis, formData, showHeader = true }: DevisPrevie
   };
 
   const tvaBreakdown = getTVABreakdown(data.prestations);
+  const mentionsPersonnalisees = getMentionsPersonnalisees();
 
   return (
     <div className="max-w-4xl mx-auto bg-white p-8 shadow-lg" id="devis-preview">
@@ -285,23 +287,41 @@ export function DevisPreview({ devis, formData, showHeader = true }: DevisPrevie
       )}
 
       {/* Mentions légales */}
-      <div className="border-t pt-6 text-xs text-gray-500 space-y-1">
-        <p>
-          <strong>Mentions légales obligatoires:</strong>
+      <div className="border-t pt-6 text-xs text-gray-500 space-y-2">
+        <p className="font-semibold text-gray-700">
+          Mentions légales obligatoires:
         </p>
-        <p>
-          Ce devis est valable {data.conditions?.validite || 30} jours à compter de sa date d'émission.
-          L'acceptation du présent devis implique l'adhésion entière aux conditions générales de vente.
-        </p>
-        {data.entreprise.formeJuridique === 'Auto-entrepreneur' && (
+        
+        {/* Mentions obligatoires */}
+        <div className="space-y-1.5">
           <p>
-            TVA non applicable, art. 293 B du CGI (régime micro-entrepreneur).
+            Ce devis est valable {data.conditions?.validite || 30} jours à compter de sa date d'émission.
+            L'acceptation du présent devis implique l'adhésion entière aux conditions générales de vente.
           </p>
+          {data.entreprise.formeJuridique === 'Auto-entrepreneur' && (
+            <p>
+              TVA non applicable, art. 293 B du CGI (régime micro-entrepreneur).
+            </p>
+          )}
+          <p>
+            En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal 
+            seront applicables, ainsi qu'une indemnité forfaitaire de 40€ pour frais de recouvrement.
+          </p>
+        </div>
+
+        {/* Mentions personnalisées */}
+        {mentionsPersonnalisees.length > 0 && (
+          <div className="mt-4 pt-3 border-t border-gray-300">
+            <p className="font-semibold text-gray-700 mb-2">
+              Mentions complémentaires:
+            </p>
+            <div className="space-y-1.5">
+              {mentionsPersonnalisees.map((mention, index) => (
+                <p key={index}>{mention}</p>
+              ))}
+            </div>
+          </div>
         )}
-        <p>
-          En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d'intérêt légal 
-          seront applicables, ainsi qu'une indemnité forfaitaire de 40€ pour frais de recouvrement.
-        </p>
       </div>
     </div>
   );
