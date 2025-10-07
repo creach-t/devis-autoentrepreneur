@@ -1,6 +1,7 @@
 import type { Devis, DevisFormData, StorageData, Entreprise, Conditions } from '../types/devis';
 
 const STORAGE_KEY = 'devis-app-data';
+const LOGO_KEY = 'devis-app-logo';
 
 /**
  * Données par défaut du localStorage
@@ -194,6 +195,41 @@ export const getMentionsPersonnalisees = (): string[] => {
 };
 
 /**
+ * Sauvegarde le logo de l'entreprise (base64)
+ */
+export const saveLogo = (logoBase64: string): void => {
+  try {
+    localStorage.setItem(LOGO_KEY, logoBase64);
+  } catch (error) {
+    console.error('Erreur sauvegarde logo:', error);
+    throw new Error('Logo trop volumineux. Utilisez une image plus petite.');
+  }
+};
+
+/**
+ * Récupère le logo de l'entreprise
+ */
+export const getLogo = (): string | null => {
+  try {
+    return localStorage.getItem(LOGO_KEY);
+  } catch (error) {
+    console.error('Erreur lecture logo:', error);
+    return null;
+  }
+};
+
+/**
+ * Supprime le logo de l'entreprise
+ */
+export const deleteLogo = (): void => {
+  try {
+    localStorage.removeItem(LOGO_KEY);
+  } catch (error) {
+    console.error('Erreur suppression logo:', error);
+  }
+};
+
+/**
  * Nettoie les anciens devis pour libérer de l'espace
  */
 export const cleanOldDevis = (): void => {
@@ -244,7 +280,8 @@ export const importData = (jsonData: string): boolean => {
  */
 export const getStorageUsage = (): { used: number; percentage: number } => {
   const data = localStorage.getItem(STORAGE_KEY) || '';
-  const used = new Blob([data]).size;
+  const logo = localStorage.getItem(LOGO_KEY) || '';
+  const used = new Blob([data, logo]).size;
   const maxSize = 5 * 1024 * 1024; // 5MB approximatif
   
   return {
