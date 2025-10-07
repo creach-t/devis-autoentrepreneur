@@ -153,20 +153,10 @@ export const TABLE_CONFIG = {
  */
 export function getPreviewCSS(): string {
   return `
-    * {
+    .a4-page * {
       margin: 0;
       padding: 0;
       box-sizing: border-box;
-    }
-
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', Arial, sans-serif;
-      background: #e5e7eb;
-      padding: 20px;
-      display: flex;
-      justify-content: center;
-      align-items: flex-start;
-      min-height: 100vh;
     }
 
     .a4-page {
@@ -176,7 +166,8 @@ export function getPreviewCSS(): string {
       box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
       padding: ${DIMENSIONS.margin}mm;
       position: relative;
-      margin: 20px auto;
+      margin: 0 auto;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica', Arial, sans-serif;
     }
 
     .accent-bar {
@@ -451,11 +442,6 @@ export function getPreviewCSS(): string {
     }
 
     @media print {
-      body {
-        background: white;
-        padding: 0;
-      }
-      
       .a4-page {
         box-shadow: none;
         margin: 0;
