@@ -299,14 +299,23 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
           y = 20;
         }
 
+        // Calculer la hauteur de la boîte conditions
+        let conditionsCount = 0;
+        if (devis.conditions.delaiExecution) conditionsCount++;
+        if (devis.conditions.conditionsPaiement) conditionsCount++;
+        if (devis.conditions.modalitesPaiement?.length) conditionsCount++;
+        
+        const conditionsHeight = 5 + (conditionsCount * 4) + 8; // titre + lignes + padding
+        const conditionsBoxY = y;
+
         // Fond coloré
         doc.setFillColor(254, 243, 199); // conditionsYellow
-        doc.rect(margin, y, contentWidth, 'auto', 'F');
+        doc.rect(margin, conditionsBoxY, contentWidth, conditionsHeight, 'F');
         
         // Bordure gauche
         doc.setDrawColor(245, 158, 11); // conditionsYellowBorder
         doc.setLineWidth(1);
-        doc.line(margin, y, margin, y + 20);
+        doc.line(margin, conditionsBoxY, margin, conditionsBoxY + conditionsHeight);
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
@@ -343,16 +352,21 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
           y = 20;
         }
 
+        const commentsBoxY = y;
+        
+        // Calculer la hauteur du commentaire
+        doc.setFontSize(8);
+        const commentsLines = doc.splitTextToSize(devis.commentaires, contentWidth - 8);
+        const commentsHeight = 5 + (commentsLines.length * 4) + 8; // titre + lignes + padding
+
         // Fond bleu
         doc.setFillColor(219, 234, 254); // commentsBlue
-        const commentsLines = doc.splitTextToSize(devis.commentaires, contentWidth - 8);
-        const commentsHeight = commentsLines.length * 4 + 12;
-        doc.rect(margin, y, contentWidth, commentsHeight, 'F');
+        doc.rect(margin, commentsBoxY, contentWidth, commentsHeight, 'F');
         
         // Bordure gauche
         doc.setDrawColor(37, 99, 235); // commentsBlueBorder
         doc.setLineWidth(1);
-        doc.line(margin, y, margin, y + commentsHeight);
+        doc.line(margin, commentsBoxY, margin, commentsBoxY + commentsHeight);
 
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(8);
