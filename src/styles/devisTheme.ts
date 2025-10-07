@@ -56,13 +56,13 @@ export const DIMENSIONS = {
 
 export const FONTS = {
   sizes: {
-    title: '28pt',
-    subtitle: '11pt',
-    sectionTitle: '10pt',
-    companyName: '10pt',
-    normal: '9pt',
-    small: '8pt',
-    tiny: '7pt',
+    title: 28,
+    subtitle: 11,
+    sectionTitle: 10,
+    companyName: 10,
+    normal: 9,
+    small: 8,
+    tiny: 7,
   },
   weights: {
     light: 300,
@@ -70,17 +70,22 @@ export const FONTS = {
     semibold: 600,
     bold: 700,
   },
+  lineHeights: {
+    tight: 1.2,
+    normal: 1.5,
+    relaxed: 1.8,
+  },
 };
 
 export const SPACING = {
-  xs: '1mm',
-  sm: '2mm',
-  md: '3mm',
-  lg: '4mm',
-  xl: '6mm',
-  xxl: '8mm',
-  xxxl: '10mm',
-  section: '12mm',
+  xs: 1,    // 1mm
+  sm: 2,    // 2mm
+  md: 3,    // 3mm
+  lg: 4,    // 4mm
+  xl: 6,    // 6mm
+  xxl: 8,   // 8mm
+  xxxl: 10, // 10mm
+  section: 12, // 12mm
 };
 
 /**
@@ -131,13 +136,13 @@ export const TABLE_CONFIG = {
   },
   header: {
     height: 7,
-    fontSize: 8,
+    fontSize: FONTS.sizes.small,
     textColor: PDF_COLORS.white,
     fillColor: PDF_COLORS.textPrimary,
   },
   body: {
     rowHeight: 7,
-    fontSize: 9,
+    fontSize: FONTS.sizes.normal,
     textColor: PDF_COLORS.textSecondary,
     altRowColor: PDF_COLORS.bgLight,
   },
@@ -192,8 +197,8 @@ export function getPreviewCSS(): string {
       align-items: center;
       justify-content: center;
       color: ${COLORS.textLight};
-      font-size: ${FONTS.sizes.small};
-      margin-bottom: ${SPACING.xxl};
+      font-size: ${FONTS.sizes.small}pt;
+      margin-bottom: ${SPACING.xxl}mm;
       background: ${COLORS.bgLight};
       overflow: hidden;
     }
@@ -206,95 +211,104 @@ export function getPreviewCSS(): string {
 
     .header {
       text-align: center;
-      margin-bottom: ${SPACING.section};
+      margin-bottom: ${SPACING.section}mm;
     }
 
     .header h1 {
-      font-size: ${FONTS.sizes.title};
+      font-size: ${FONTS.sizes.title}pt;
       font-weight: ${FONTS.weights.light};
       color: ${COLORS.textPrimary};
       letter-spacing: 2px;
-      margin-bottom: ${SPACING.md};
+      margin-bottom: ${SPACING.md}mm;
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .header .numero {
-      font-size: ${FONTS.sizes.subtitle};
+      font-size: ${FONTS.sizes.subtitle}pt;
       color: ${COLORS.textMuted};
       font-weight: ${FONTS.weights.normal};
+      line-height: ${FONTS.lineHeights.normal};
     }
 
     .section-title {
-      font-size: ${FONTS.sizes.sectionTitle};
+      font-size: ${FONTS.sizes.sectionTitle}pt;
       font-weight: ${FONTS.weights.semibold};
       color: ${COLORS.accent};
       text-transform: uppercase;
       letter-spacing: 0.5px;
       border-bottom: 1.5px solid ${COLORS.accent};
-      padding-bottom: ${SPACING.sm};
-      margin-bottom: ${SPACING.md};
+      padding-bottom: ${SPACING.sm}mm;
+      margin-bottom: ${SPACING.md}mm;
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .info-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: ${SPACING.xxxl};
-      margin-bottom: ${SPACING.xxxl};
+      gap: ${SPACING.xxxl}mm;
+      margin-bottom: ${SPACING.xxxl}mm;
     }
 
     .info-block {
-      font-size: ${FONTS.sizes.normal};
-      line-height: 1.5;
+      font-size: ${FONTS.sizes.normal}pt;
+      line-height: ${FONTS.lineHeights.normal};
     }
 
     .info-block .company-name {
       font-weight: ${FONTS.weights.semibold};
       color: ${COLORS.textPrimary};
-      margin-bottom: ${SPACING.sm};
-      font-size: ${FONTS.sizes.companyName};
+      margin-bottom: ${SPACING.sm}mm;
+      font-size: ${FONTS.sizes.companyName}pt;
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .info-block .detail {
       color: ${COLORS.textSecondary};
+      line-height: ${FONTS.lineHeights.normal};
     }
 
     .info-block .legal {
       color: ${COLORS.textLight};
-      font-size: ${FONTS.sizes.small};
-      margin-top: ${SPACING.sm};
+      font-size: ${FONTS.sizes.small}pt;
+      margin-top: ${SPACING.sm}mm;
+      line-height: ${FONTS.lineHeights.normal};
     }
 
     .devis-info-bar {
       background: ${COLORS.bgGray};
-      padding: ${SPACING.lg};
+      padding: ${SPACING.lg}mm;
       border-radius: 2mm;
-      margin-bottom: ${SPACING.xxl};
+      margin-bottom: ${SPACING.xxl}mm;
       display: grid;
       grid-template-columns: repeat(3, 1fr);
-      gap: ${SPACING.lg};
-      font-size: ${FONTS.sizes.normal};
+      gap: ${SPACING.lg}mm;
+      font-size: ${FONTS.sizes.normal}pt;
     }
 
     .devis-info-item .label {
       color: ${COLORS.textMuted};
-      font-size: ${FONTS.sizes.small};
-      margin-bottom: ${SPACING.xs};
+      font-size: ${FONTS.sizes.small}pt;
+      margin-bottom: ${SPACING.xs}mm;
       text-transform: uppercase;
       letter-spacing: 0.3px;
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .devis-info-item .value {
       color: ${COLORS.textPrimary};
       font-weight: ${FONTS.weights.semibold};
+      font-size: ${FONTS.sizes.normal}pt;
+      line-height: ${FONTS.lineHeights.normal};
     }
 
     .prestations-section {
-      margin-bottom: ${SPACING.xxl};
+      margin-bottom: ${SPACING.xxl}mm;
     }
 
     .prestations-table {
       width: 100%;
       border-collapse: collapse;
-      font-size: ${FONTS.sizes.normal};
+      font-size: ${FONTS.sizes.normal}pt;
     }
 
     .prestations-table thead {
@@ -303,12 +317,13 @@ export function getPreviewCSS(): string {
     }
 
     .prestations-table th {
-      padding: ${SPACING.md} ${SPACING.sm};
+      padding: ${SPACING.md}mm ${SPACING.sm}mm;
       text-align: left;
       font-weight: ${FONTS.weights.semibold};
-      font-size: ${FONTS.sizes.small};
+      font-size: ${FONTS.sizes.small}pt;
       text-transform: uppercase;
       letter-spacing: 0.3px;
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .prestations-table th.center {
@@ -328,8 +343,10 @@ export function getPreviewCSS(): string {
     }
 
     .prestations-table td {
-      padding: ${SPACING.md} ${SPACING.sm};
+      padding: ${SPACING.md}mm ${SPACING.sm}mm;
       color: ${COLORS.textSecondary};
+      font-size: ${FONTS.sizes.normal}pt;
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .prestations-table td.center {
@@ -345,7 +362,7 @@ export function getPreviewCSS(): string {
     .totaux-section {
       display: flex;
       justify-content: flex-end;
-      margin-bottom: ${SPACING.xxl};
+      margin-bottom: ${SPACING.xxl}mm;
     }
 
     .totaux-box {
@@ -353,23 +370,24 @@ export function getPreviewCSS(): string {
       background: ${COLORS.bgLight};
       border: 1px solid ${COLORS.borderLight};
       border-radius: 2mm;
-      padding: ${SPACING.lg};
+      padding: ${SPACING.lg}mm;
     }
 
     .totaux-line {
       display: flex;
       justify-content: space-between;
-      padding: ${SPACING.sm} 0;
-      font-size: ${FONTS.sizes.normal};
+      padding: ${SPACING.sm}mm 0;
+      font-size: ${FONTS.sizes.normal}pt;
       color: ${COLORS.textSecondary};
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .totaux-line.total {
       border-top: 2px solid ${COLORS.textPrimary};
-      margin-top: ${SPACING.sm};
-      padding-top: ${SPACING.md};
+      margin-top: ${SPACING.sm}mm;
+      padding-top: ${SPACING.md}mm;
       font-weight: ${FONTS.weights.bold};
-      font-size: ${FONTS.sizes.subtitle};
+      font-size: ${FONTS.sizes.subtitle}pt;
       color: ${COLORS.textPrimary};
     }
 
@@ -381,10 +399,10 @@ export function getPreviewCSS(): string {
     .comments-box {
       background: ${COLORS.conditionsYellow};
       border-left: 3px solid ${COLORS.conditionsYellowBorder};
-      padding: ${SPACING.lg};
-      margin-bottom: ${SPACING.xl};
-      font-size: ${FONTS.sizes.small};
-      line-height: 1.5;
+      padding: ${SPACING.lg}mm;
+      margin-bottom: ${SPACING.xl}mm;
+      font-size: ${FONTS.sizes.small}pt;
+      line-height: ${FONTS.lineHeights.normal};
       color: ${COLORS.conditionsYellowText};
       border-radius: 2mm;
     }
@@ -397,36 +415,39 @@ export function getPreviewCSS(): string {
 
     .box-title {
       font-weight: ${FONTS.weights.semibold};
-      margin-bottom: ${SPACING.sm};
+      margin-bottom: ${SPACING.sm}mm;
       text-transform: uppercase;
       letter-spacing: 0.3px;
-      font-size: ${FONTS.sizes.small};
+      font-size: ${FONTS.sizes.small}pt;
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .mentions-legales {
       border-top: 1px solid ${COLORS.borderLight};
-      padding-top: ${SPACING.lg};
-      font-size: ${FONTS.sizes.tiny};
+      padding-top: ${SPACING.lg}mm;
+      font-size: ${FONTS.sizes.tiny}pt;
       color: ${COLORS.textMuted};
-      line-height: 1.5;
+      line-height: ${FONTS.lineHeights.normal};
     }
 
     .mentions-legales .title {
       font-weight: ${FONTS.weights.semibold};
       color: ${COLORS.textPrimary};
-      margin-bottom: ${SPACING.sm};
-      font-size: ${FONTS.sizes.small};
+      margin-bottom: ${SPACING.sm}mm;
+      font-size: ${FONTS.sizes.small}pt;
+      line-height: ${FONTS.lineHeights.tight};
     }
 
     .mentions-legales p {
-      margin-bottom: ${SPACING.sm};
+      margin-bottom: ${SPACING.sm}mm;
     }
 
     .page-footer {
-      margin-top: ${SPACING.lg};
+      margin-top: ${SPACING.lg}mm;
       text-align: center;
-      font-size: ${FONTS.sizes.tiny};
+      font-size: ${FONTS.sizes.tiny}pt;
       color: ${COLORS.textLight};
+      line-height: ${FONTS.lineHeights.normal};
     }
 
     @media print {
