@@ -51,14 +51,12 @@ export function DevisDocument({
         {/* Barre accent */}
         <div className="accent-bar"></div>
 
-        {/* Zone logo */}
-        <div className="logo-zone">
-          {logoUrl ? (
+        {/* Zone logo - affichée uniquement si un logo est configuré */}
+        {logoUrl && (
+          <div className="logo-zone">
             <img src={logoUrl} alt="Logo entreprise" />
-          ) : (
-            <span>[LOGO ICI]</span>
-          )}
-        </div>
+          </div>
+        )}
 
         {/* En-tête */}
         <div className="header">
