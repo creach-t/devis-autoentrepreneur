@@ -1,6 +1,7 @@
-import { Save } from 'lucide-react';
-import React from 'react';
-import type { Entreprise } from '../../../types/devis';
+import { Save, Upload, X, Image } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import type { Entreprise } from '../../types/devis';
+import { saveLogo, getLogo, deleteLogo } from '../../utils/storage';
 
 interface EntrepriseTabProps {
   entreprise: Partial<Entreprise>;
@@ -9,6 +10,57 @@ interface EntrepriseTabProps {
 }
 
 export function EntrepriseTab({ entreprise, setEntreprise, onSave }: EntrepriseTabProps) {
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const logo = getLogo();
+    setLogoUrl(logo);
+  }, []);
+
+  const handleLogoUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    setUploadError(null);
+
+    // Vérification type
+    if (!file.type.startsWith('image/')) {
+      setUploadError('Veuillez sélectionner une image (PNG, JPG, GIF)');
+      return;
+    }
+
+    // Vérification taille (max 500KB)
+    if (file.size > 500 * 1024) {
+      setUploadError('L\'image est trop volumineuse. Taille maximale: 500KB');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const base64 = e.target?.result as string;
+        saveLogo(base64);
+        setLogoUrl(base64);
+        alert('Logo sauvegardé avec succès !');
+      } catch (error) {
+        setUploadError('Erreur lors de la sauvegarde du logo. Image trop volumineuse.');
+      }
+    };
+    reader.readAsDataURL(file);
+
+    // Reset input
+    event.target.value = '';
+  };
+
+  const handleLogoDelete = () => {
+    if (window.confirm('Êtes-vous sûr de vouloir supprimer le logo ?')) {
+      deleteLogo();
+      setLogoUrl(null);
+      alert('Logo supprimé !');
+    }
+  };
+
   return (
     <div className="bg-white p-6 rounded-lg border border-gray-200">
       <h2 className="text-xl font-semibold mb-4 text-blue-600">
@@ -18,6 +70,74 @@ export function EntrepriseTab({ entreprise, setEntreprise, onSave }: EntrepriseT
         Ces informations seront automatiquement pré-remplies dans vos nouveaux devis.
       </p>
 
+      {/* Section Logo */}
+      <div className="mb-8 p-6 bg-gray-50 rounded-lg border border-gray-200">
+        <h3 className="text-lg font-semibold mb-4 text-gray-800 flex items-center gap-2">
+          <Image className="w-5 h-5" />
+          Logo de l'entreprise
+        </h3>
+        <p className="text-sm text-gray-600 mb-4">
+          Le logo apparaîtra en haut à gauche de vos devis. Format recommandé: PNG ou JPG (max 500KB)
+        </p>
+
+        <div className="flex flex-col md:flex-row gap-6 items-start">
+          {/* Prévisualisation */}
+          <div className="flex-shrink-0">
+            <div className="w-48 h-24 border-2 border-dashed border-gray-300 rounded-lg flex items-center justify-center overflow-hidden bg-white">
+              {logoUrl ? (
+                <img
+                  src={logoUrl}
+                  alt="Logo entreprise"
+                  className="max-w-full max-h-full object-contain"
+                />
+              ) : (
+                <div className="text-center text-gray-400 p-4">
+                  <Image className="w-8 h-8 mx-auto mb-2 opacity-50" />
+                  <span className="text-xs">Aucun logo</span>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex-grow">
+            <div className="flex flex-wrap gap-3">
+              <label className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors cursor-pointer">
+                <Upload className="w-4 h-4" />
+                {logoUrl ? 'Changer le logo' : 'Ajouter un logo'}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleLogoUpload}
+                  className="hidden"
+                />
+              </label>
+
+              {logoUrl && (
+                <button
+                  onClick={handleLogoDelete}
+                  className="flex items-center gap-2 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  Supprimer
+                </button>
+              )}
+            </div>
+
+            {uploadError && (
+              <div className="mt-3 p-3 bg-red-50 border border-red-200 rounded-md text-sm text-red-700">
+                {uploadError}
+              </div>
+            )}
+
+            <p className="text-xs text-gray-500 mt-3">
+              💡 Pour un meilleur rendu, utilisez une image avec fond transparent (PNG) aux dimensions approximatives de 200x80 pixels
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Informations entreprise */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
