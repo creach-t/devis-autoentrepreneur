@@ -2,7 +2,7 @@ import React from 'react';
 import { Download, Eye, Printer } from 'lucide-react';
 import { formatCurrency, getTVABreakdown } from '../utils/calculations';
 import { getMentionsPersonnalisees } from '../utils/storage';
-import { PDF_COLORS, DIMENSIONS, TABLE_CONFIG } from '../styles/devisTheme';
+import { PDF_COLORS, DIMENSIONS, TABLE_CONFIG, FONTS, SPACING } from '../styles/devisTheme';
 import type { Devis } from '../types/devis';
 
 interface DevisExportProps {
@@ -31,18 +31,16 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       doc.rect(0, 0, DIMENSIONS.accentBarWidth, pageHeight, 'F');
 
       // === ZONE LOGO ===
-      // Zone placeholder pour logo (à implémenter plus tard)
-      y += 0; // Logo zone: 20mm de hauteur prévu
-      y += 8; // Espacement après logo
+      y += SPACING.xxl;
 
       // === EN-TÊTE ===
-      doc.setFontSize(28);
+      doc.setFontSize(FONTS.sizes.title);
       doc.setTextColor(...PDF_COLORS.textPrimary);
       doc.setFont('helvetica', 'normal');
       doc.text('DEVIS', pageWidth / 2, y, { align: 'center' });
       y += 8;
       
-      doc.setFontSize(11);
+      doc.setFontSize(FONTS.sizes.subtitle);
       doc.setTextColor(...PDF_COLORS.textMuted);
       doc.text(`N° ${devis.numero}`, pageWidth / 2, y, { align: 'center' });
       y += 18;
@@ -51,7 +49,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       const startY = y;
       
       // Titres
-      doc.setFontSize(10);
+      doc.setFontSize(FONTS.sizes.sectionTitle);
       doc.setFont('helvetica', 'bold');
       doc.setTextColor(...PDF_COLORS.accent);
       doc.text('ÉMETTEUR', margin, y);
@@ -66,7 +64,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       y += 5;
 
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(9);
+      doc.setFontSize(FONTS.sizes.normal);
       doc.setTextColor(...PDF_COLORS.textPrimary);
       
       // Émetteur
@@ -84,7 +82,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       });
 
       // Infos légales entreprise
-      doc.setFontSize(8);
+      doc.setFontSize(FONTS.sizes.small);
       doc.setTextColor(...PDF_COLORS.textLight);
       if (devis.entreprise.siret) {
         doc.text(`SIRET: ${devis.entreprise.siret}`, margin, y);
@@ -96,7 +94,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
 
       // Destinataire
       y = startY + 6;
-      doc.setFontSize(9);
+      doc.setFontSize(FONTS.sizes.normal);
       doc.setTextColor(...PDF_COLORS.textPrimary);
       
       const destinataireLines = [
@@ -113,7 +111,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       });
 
       // Infos légales client
-      doc.setFontSize(8);
+      doc.setFontSize(FONTS.sizes.small);
       doc.setTextColor(...PDF_COLORS.textLight);
       if (devis.client.siret) {
         doc.text(`SIRET: ${devis.client.siret}`, pageWidth / 2 + 5, y);
@@ -125,7 +123,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       doc.setFillColor(...PDF_COLORS.bgGray);
       doc.rect(margin, y, contentWidth, 16, 'F');
       
-      doc.setFontSize(8);
+      doc.setFontSize(FONTS.sizes.small);
       doc.setTextColor(...PDF_COLORS.textMuted);
       doc.text("DATE D'ÉMISSION", margin + 4, y + 4);
       doc.text("VALIDITÉ", margin + 65, y + 4);
@@ -133,7 +131,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         doc.text("OBJET", margin + 125, y + 4);
       }
       
-      doc.setFontSize(9);
+      doc.setFontSize(FONTS.sizes.normal);
       doc.setTextColor(...PDF_COLORS.textPrimary);
       doc.setFont('helvetica', 'bold');
       doc.text(new Date(devis.dateCreation).toLocaleDateString('fr-FR'), margin + 4, y + 9);
@@ -149,7 +147,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
 
       // === PRESTATIONS ===
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(10);
+      doc.setFontSize(FONTS.sizes.sectionTitle);
       doc.setTextColor(...PDF_COLORS.accent);
       doc.text('DÉTAIL DES PRESTATIONS', margin, y);
       y += 1;
@@ -221,7 +219,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         }
 
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(9);
+        doc.setFontSize(FONTS.sizes.normal);
         doc.setTextColor(...PDF_COLORS.accent);
         doc.text('RÉCAPITULATIF TVA', margin, y);
         y += 1;
@@ -230,7 +228,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         y += 6;
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
+        doc.setFontSize(FONTS.sizes.small);
         
         tvaBreakdown.forEach(item => {
           doc.setTextColor(...PDF_COLORS.textMuted);
@@ -259,7 +257,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       doc.setDrawColor(...PDF_COLORS.borderLight);
       doc.rect(totalBoxX, totalBoxY, 50, totalBoxHeight);
 
-      doc.setFontSize(9);
+      doc.setFontSize(FONTS.sizes.normal);
       doc.setTextColor(...PDF_COLORS.textSecondary);
       doc.text('Total HT', totalBoxX + 3, totalBoxY + 6);
       doc.text(formatCurrency(devis.totaux.totalHT), totalBoxX + 47, totalBoxY + 6, { align: 'right' });
@@ -272,7 +270,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       doc.line(totalBoxX + 3, totalBoxY + 14, totalBoxX + 47, totalBoxY + 14);
       
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(11);
+      doc.setFontSize(FONTS.sizes.subtitle);
       doc.setTextColor(...PDF_COLORS.textPrimary);
       doc.text('Total TTC', totalBoxX + 3, totalBoxY + 20);
       
@@ -282,7 +280,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       doc.setFont('helvetica', 'normal');
 
       if (devis.totaux.acompteTTC) {
-        doc.setFontSize(8);
+        doc.setFontSize(FONTS.sizes.small);
         doc.setTextColor(...PDF_COLORS.textSecondary);
         doc.text(`Acompte: ${formatCurrency(devis.totaux.acompteTTC)}`, totalBoxX + 3, totalBoxY + 26);
         doc.setFont('helvetica', 'bold');
@@ -305,26 +303,26 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         if (devis.conditions.conditionsPaiement) conditionsCount++;
         if (devis.conditions.modalitesPaiement?.length) conditionsCount++;
         
-        const conditionsHeight = 5 + (conditionsCount * 4) + 8; // titre + lignes + padding
+        const conditionsHeight = 5 + (conditionsCount * 4) + 8;
         const conditionsBoxY = y;
 
         // Fond coloré
-        doc.setFillColor(254, 243, 199); // conditionsYellow
+        doc.setFillColor(254, 243, 199);
         doc.rect(margin, conditionsBoxY, contentWidth, conditionsHeight, 'F');
         
         // Bordure gauche
-        doc.setDrawColor(245, 158, 11); // conditionsYellowBorder
+        doc.setDrawColor(245, 158, 11);
         doc.setLineWidth(1);
         doc.line(margin, conditionsBoxY, margin, conditionsBoxY + conditionsHeight);
 
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(120, 53, 15); // conditionsYellowText
+        doc.setFontSize(FONTS.sizes.small);
+        doc.setTextColor(120, 53, 15);
         doc.text('CONDITIONS', margin + 4, y + 5);
         y += 8;
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
+        doc.setFontSize(FONTS.sizes.small);
 
         if (devis.conditions.delaiExecution) {
           const text = `Délai d'exécution: ${devis.conditions.delaiExecution}`;
@@ -354,28 +352,27 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
 
         const commentsBoxY = y;
         
-        // Calculer la hauteur du commentaire
-        doc.setFontSize(8);
+        doc.setFontSize(FONTS.sizes.small);
         const commentsLines = doc.splitTextToSize(devis.commentaires, contentWidth - 8);
-        const commentsHeight = 5 + (commentsLines.length * 4) + 8; // titre + lignes + padding
+        const commentsHeight = 5 + (commentsLines.length * 4) + 8;
 
         // Fond bleu
-        doc.setFillColor(219, 234, 254); // commentsBlue
+        doc.setFillColor(219, 234, 254);
         doc.rect(margin, commentsBoxY, contentWidth, commentsHeight, 'F');
         
         // Bordure gauche
-        doc.setDrawColor(37, 99, 235); // commentsBlueBorder
+        doc.setDrawColor(37, 99, 235);
         doc.setLineWidth(1);
         doc.line(margin, commentsBoxY, margin, commentsBoxY + commentsHeight);
 
         doc.setFont('helvetica', 'bold');
-        doc.setFontSize(8);
-        doc.setTextColor(30, 58, 138); // commentsBlueText
+        doc.setFontSize(FONTS.sizes.small);
+        doc.setTextColor(30, 58, 138);
         doc.text('COMMENTAIRES', margin + 4, y + 5);
         y += 8;
 
         doc.setFont('helvetica', 'normal');
-        doc.setFontSize(8);
+        doc.setFontSize(FONTS.sizes.small);
         
         commentsLines.forEach((line: string) => {
           if (y > pageHeight - 25) {
@@ -405,13 +402,13 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       y += 6;
 
       doc.setFont('helvetica', 'bold');
-      doc.setFontSize(8);
+      doc.setFontSize(FONTS.sizes.small);
       doc.setTextColor(...PDF_COLORS.textPrimary);
       doc.text('MENTIONS LÉGALES', margin, y);
       y += 5;
       
       doc.setFont('helvetica', 'normal');
-      doc.setFontSize(7);
+      doc.setFontSize(FONTS.sizes.tiny);
       doc.setTextColor(...PDF_COLORS.textMuted);
       
       // Mentions obligatoires
@@ -456,7 +453,7 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       const totalPages = doc.internal.pages.length - 1;
       for (let i = 1; i <= totalPages; i++) {
         doc.setPage(i);
-        doc.setFontSize(7);
+        doc.setFontSize(FONTS.sizes.tiny);
         doc.setTextColor(...PDF_COLORS.textLight);
         doc.text(
           `Page ${i} / ${totalPages}`, 
