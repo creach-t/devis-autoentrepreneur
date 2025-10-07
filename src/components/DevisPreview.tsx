@@ -14,22 +14,22 @@ interface DevisPreviewProps {
  */
 export function DevisPreview({ devis, formData, logoUrl }: DevisPreviewProps) {
   return (
-    <div className="devis-preview-container">
+    <div className="devis-preview-wrapper">
       <style>{`
-        .devis-preview-container {
+        .devis-preview-wrapper {
           width: 100%;
           display: flex;
           justify-content: center;
           background: #e5e7eb;
           padding: 20px;
-          min-height: 100vh;
+          border-radius: 8px;
         }
 
         @media print {
-          .devis-preview-container {
+          .devis-preview-wrapper {
             background: white;
             padding: 0;
-            min-height: auto;
+            border-radius: 0;
           }
         }
       `}</style>
