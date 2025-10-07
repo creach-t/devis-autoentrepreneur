@@ -1,6 +1,7 @@
 import React from 'react';
 import { Download, Eye, Printer } from 'lucide-react';
 import { formatCurrency, getTVABreakdown } from '../utils/calculations';
+import { getMentionsPersonnalisees } from '../utils/storage';
 import type { Devis } from '../types/devis';
 
 interface DevisExportProps {
@@ -13,253 +14,374 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
 
   const generatePDF = async () => {
     try {
-      // Import dynamique de jsPDF
       const { jsPDF } = await import('jspdf');
       
       const doc = new jsPDF();
       const pageWidth = doc.internal.pageSize.width;
       const pageHeight = doc.internal.pageSize.height;
       const margin = 20;
+      const contentWidth = pageWidth - (2 * margin);
       let y = 20;
 
-      // Configuration des polices
+      // Palette sobre : gris foncé + bleu discret
+      const PRIMARY = [70, 130, 180];    // Bleu acier
+      const DARK = [50, 50, 50];         // Gris très foncé
+      const MEDIUM = [100, 100, 100];    // Gris moyen
+      const LIGHT = [180, 180, 180];     // Gris clair
+      const BG = [245, 245, 245];        // Fond gris très clair
+
       doc.setFont('helvetica');
 
-      // En-tête
-      doc.setFontSize(24);
-      doc.setTextColor(0, 0, 0);
+      // === EN-TÊTE ===
+      doc.setFontSize(26);
+      doc.setTextColor(...DARK);
+      doc.setFont('helvetica', 'bold');
       doc.text('DEVIS', pageWidth / 2, y, { align: 'center' });
-      y += 10;
-      
-      doc.setFontSize(14);
-      doc.text(`N° ${devis.numero}`, pageWidth / 2, y, { align: 'center' });
-      y += 20;
-
-      // Informations émetteur et destinataire
-      doc.setFontSize(12);
-      doc.setTextColor(0, 100, 200);
-      doc.text('ÉMETTEUR', margin, y);
-      doc.text('DESTINATAIRE', pageWidth / 2 + 10, y);
       y += 8;
+      
+      doc.setFontSize(11);
+      doc.setFont('helvetica', 'normal');
+      doc.setTextColor(...MEDIUM);
+      doc.text(`N° ${devis.numero}`, pageWidth / 2, y, { align: 'center' });
+      y += 18;
 
-      doc.setTextColor(0, 0, 0);
+      // === ÉMETTEUR ET DESTINATAIRE ===
+      const startY = y;
+      
+      // Titres
       doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(...PRIMARY);
+      doc.text('ÉMETTEUR', margin, y);
+      doc.text('DESTINATAIRE', pageWidth / 2 + 5, y);
+      y += 1;
+      
+      // Lignes sous les titres
+      doc.setDrawColor(...PRIMARY);
+      doc.setLineWidth(0.5);
+      doc.line(margin, y, margin + 40, y);
+      doc.line(pageWidth / 2 + 5, y, pageWidth / 2 + 55, y);
+      y += 5;
 
-      // Émetteur (colonne gauche)
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(9);
+      doc.setTextColor(...DARK);
+      
+      // Émetteur
       const emetteurLines = [
         devis.entreprise.nom,
         devis.entreprise.adresse,
         `${devis.entreprise.codePostal} ${devis.entreprise.ville}`,
         devis.entreprise.telephone && `Tél: ${devis.entreprise.telephone}`,
-        devis.entreprise.email && `Email: ${devis.entreprise.email}`,
+        devis.entreprise.email,
         devis.entreprise.siret && `SIRET: ${devis.entreprise.siret}`,
-        devis.entreprise.numeroTVA && `N° TVA: ${devis.entreprise.numeroTVA}`
       ].filter(Boolean);
 
       emetteurLines.forEach(line => {
-        if (line) {
-          doc.text(line, margin, y);
-          y += 5;
-        }
+        doc.text(line || '', margin, y);
+        y += 4.5;
       });
 
-      // Reset y pour destinataire
-      y = 48;
-
-      // Destinataire (colonne droite)
+      // Destinataire
+      y = startY + 6;
       const destinataireLines = [
         devis.client.nom,
         devis.client.adresse,
         `${devis.client.codePostal} ${devis.client.ville}`,
         devis.client.telephone && `Tél: ${devis.client.telephone}`,
-        devis.client.email && `Email: ${devis.client.email}`,
+        devis.client.email,
         devis.client.siret && `SIRET: ${devis.client.siret}`
       ].filter(Boolean);
 
       destinataireLines.forEach(line => {
-        if (line) {
-          doc.text(line, pageWidth / 2 + 10, y);
-          y += 5;
-        }
+        doc.text(line || '', pageWidth / 2 + 5, y);
+        y += 4.5;
       });
 
-      y = Math.max(y, 48 + emetteurLines.length * 5) + 15;
+      y = startY + Math.max(emetteurLines.length, destinataireLines.length) * 4.5 + 12;
 
-      // Informations du devis
-      doc.setFillColor(240, 240, 240);
-      doc.rect(margin, y, pageWidth - 2 * margin, 20, 'F');
-      
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Date d'émission: ${new Date(devis.dateCreation).toLocaleDateString('fr-FR')}`, margin + 5, y + 7);
-      doc.text(`Date de validité: ${new Date(devis.dateValidite).toLocaleDateString('fr-FR')}`, margin + 5, y + 14);
-      
-      if (devis.objet) {
-        doc.text(`Objet: ${devis.objet}`, pageWidth / 2 + 10, y + 7);
-      }
-      
-      y += 30;
-
-      // Titre des prestations
-      doc.setFontSize(12);
-      doc.setTextColor(100, 0, 200);
-      doc.text('DÉTAIL DES PRESTATIONS', margin, y);
-      y += 10;
-
-      // En-tête tableau
-      doc.setFillColor(230, 230, 230);
-      doc.rect(margin, y, pageWidth - 2 * margin, 8, 'F');
+      // === INFORMATIONS DU DEVIS ===
+      doc.setFillColor(...BG);
+      doc.rect(margin, y, contentWidth, 16, 'F');
       
       doc.setFontSize(9);
-      doc.setTextColor(0, 0, 0);
-      doc.text('Désignation', margin + 2, y + 5);
-      doc.text('Qté', margin + 80, y + 5);
-      doc.text('Unité', margin + 95, y + 5);
-      doc.text('P.U. HT', margin + 115, y + 5);
-      doc.text('TVA', margin + 140, y + 5);
-      doc.text('Total HT', margin + 155, y + 5);
+      doc.setTextColor(...DARK);
+      doc.text(`Date d'émission: ${new Date(devis.dateCreation).toLocaleDateString('fr-FR')}`, margin + 4, y + 6);
+      doc.text(`Date de validité: ${new Date(devis.dateValidite).toLocaleDateString('fr-FR')}`, margin + 4, y + 11);
       
-      y += 12;
+      if (devis.objet) {
+        const objetText = devis.objet.length > 45 ? devis.objet.substring(0, 45) + '...' : devis.objet;
+        doc.text(`Objet: ${objetText}`, pageWidth / 2 + 5, y + 8);
+      }
+      
+      y += 22;
 
-      // Lignes des prestations
-      devis.prestations.forEach(prestation => {
-        // Gestion du saut de page
+      // === PRESTATIONS ===
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(11);
+      doc.setTextColor(...DARK);
+      doc.text('Détail des prestations', margin, y);
+      y += 7;
+
+      // En-tête tableau
+      doc.setFillColor(...DARK);
+      doc.rect(margin, y, contentWidth, 7, 'F');
+      
+      doc.setFontSize(8);
+      doc.setTextColor(255, 255, 255);
+      doc.text('Désignation', margin + 2, y + 4.5);
+      doc.text('Qté', margin + 95, y + 4.5);
+      doc.text('Unité', margin + 108, y + 4.5);
+      doc.text('P.U. HT', margin + 128, y + 4.5);
+      doc.text('TVA', margin + 148, y + 4.5);
+      doc.text('Total HT', pageWidth - margin - 2, y + 4.5, { align: 'right' });
+      
+      y += 9;
+      doc.setFont('helvetica', 'normal');
+
+      // Lignes prestations
+      let alternate = false;
+      devis.prestations.forEach((prestation) => {
         if (y > pageHeight - 50) {
+          doc.addPage();
+          y = 20;
+          alternate = false;
+        }
+
+        if (alternate) {
+          doc.setFillColor(...BG);
+          doc.rect(margin, y - 3, contentWidth, 7, 'F');
+        }
+
+        doc.setFontSize(8);
+        doc.setTextColor(...DARK);
+        
+        const designation = prestation.designation.length > 38 
+          ? prestation.designation.substring(0, 38) + '...' 
+          : prestation.designation;
+        
+        doc.text(designation, margin + 2, y + 1);
+        doc.text(prestation.quantite.toString(), margin + 97, y + 1);
+        doc.text(prestation.uniteMesure, margin + 110, y + 1);
+        doc.text(formatCurrency(prestation.prixUnitaireHT), margin + 130, y + 1, { align: 'left' });
+        doc.text(`${prestation.tauxTVA}%`, margin + 150, y + 1);
+        doc.text(formatCurrency(prestation.totalHT), pageWidth - margin - 2, y + 1, { align: 'right' });
+        
+        y += 7;
+        alternate = !alternate;
+      });
+
+      y += 3;
+
+      // === RÉCAPITULATIF TVA ===
+      if (tvaBreakdown.length > 0) {
+        if (y > pageHeight - 70) {
           doc.addPage();
           y = 20;
         }
 
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
-        
-        // Désignation (avec troncature si trop long)
-        const designation = prestation.designation.length > 35 
-          ? prestation.designation.substring(0, 35) + '...' 
-          : prestation.designation;
-        
-        doc.text(designation, margin + 2, y);
-        doc.text(prestation.quantite.toString(), margin + 80, y);
-        doc.text(prestation.uniteMesure, margin + 95, y);
-        doc.text(formatCurrency(prestation.prixUnitaireHT).replace('€', '').trim() + ' €', margin + 115, y);
-        doc.text(`${prestation.tauxTVA}%`, margin + 140, y);
-        doc.text(formatCurrency(prestation.totalHT).replace('€', '').trim() + ' €', margin + 155, y);
-        
-        y += 8;
-      });
+        doc.setTextColor(...DARK);
+        doc.text('Récapitulatif TVA', margin, y);
+        y += 6;
 
-      y += 10;
-
-      // Récapitulatif TVA si nécessaire
-      if (tvaBreakdown.length > 1) {
-        doc.setFontSize(10);
-        doc.setTextColor(100, 100, 100);
-        doc.text('RÉCAPITULATIF TVA', margin, y);
-        y += 8;
-
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        
         tvaBreakdown.forEach(item => {
-          doc.setFontSize(9);
-          doc.text(`TVA ${item.taux}%: ${formatCurrency(item.baseHT)} => ${formatCurrency(item.montantTVA)}`, margin + 10, y);
-          y += 6;
+          doc.setTextColor(...MEDIUM);
+          doc.text(`TVA ${item.taux}%`, margin + 2, y);
+          doc.setTextColor(...DARK);
+          doc.text(`Base HT: ${formatCurrency(item.baseHT)}`, margin + 25, y);
+          doc.text(`Montant: ${formatCurrency(item.montantTVA)}`, margin + 70, y);
+          y += 5;
         });
         
-        y += 10;
+        y += 5;
       }
 
-      // Totaux dans un encadré
-      const totalBoxY = y;
-      const totalBoxHeight = 25;
-      doc.setFillColor(250, 250, 250);
-      doc.rect(pageWidth - 80, totalBoxY, 60, totalBoxHeight, 'FD');
+      // === TOTAUX ===
+      if (y > pageHeight - 60) {
+        doc.addPage();
+        y = 20;
+      }
 
-      doc.setFontSize(10);
-      doc.setTextColor(0, 0, 0);
-      doc.text(`Total HT: ${formatCurrency(devis.totaux.totalHT)}`, pageWidth - 75, totalBoxY + 8);
-      doc.text(`Total TVA: ${formatCurrency(devis.totaux.totalTVA)}`, pageWidth - 75, totalBoxY + 15);
+      const totalBoxX = pageWidth - 70;
+      const totalBoxY = y;
+      const totalBoxHeight = devis.totaux.acompteTTC ? 32 : 25;
+
+      doc.setFillColor(...BG);
+      doc.rect(totalBoxX, totalBoxY, 50, totalBoxHeight, 'F');
+      doc.setDrawColor(...LIGHT);
+      doc.rect(totalBoxX, totalBoxY, 50, totalBoxHeight);
+
+      doc.setFontSize(9);
+      doc.setTextColor(...DARK);
+      doc.text('Total HT:', totalBoxX + 3, totalBoxY + 6);
+      doc.text(formatCurrency(devis.totaux.totalHT), totalBoxX + 47, totalBoxY + 6, { align: 'right' });
       
-      doc.setFontSize(12);
+      doc.text('Total TVA:', totalBoxX + 3, totalBoxY + 12);
+      doc.text(formatCurrency(devis.totaux.totalTVA), totalBoxX + 47, totalBoxY + 12, { align: 'right' });
+      
+      doc.setDrawColor(...DARK);
+      doc.line(totalBoxX + 3, totalBoxY + 14, totalBoxX + 47, totalBoxY + 14);
+      
       doc.setFont('helvetica', 'bold');
-      doc.text(`Total TTC: ${formatCurrency(devis.totaux.totalTTC)}`, pageWidth - 75, totalBoxY + 22);
+      doc.setFontSize(11);
+      doc.setTextColor(...PRIMARY);
+      doc.text('Total TTC:', totalBoxX + 3, totalBoxY + 20);
+      doc.text(formatCurrency(devis.totaux.totalTTC), totalBoxX + 47, totalBoxY + 20, { align: 'right' });
       doc.setFont('helvetica', 'normal');
 
-      y = totalBoxY + totalBoxHeight + 15;
-
-      // Acompte si défini
       if (devis.totaux.acompteTTC) {
+        doc.setFontSize(8);
+        doc.setTextColor(...DARK);
+        doc.text(`Acompte: ${formatCurrency(devis.totaux.acompteTTC)}`, totalBoxX + 3, totalBoxY + 26);
+        doc.text(`Reste: ${formatCurrency(devis.totaux.resteAPayer || 0)}`, totalBoxX + 3, totalBoxY + 30);
+      }
+
+      y = totalBoxY + totalBoxHeight + 10;
+
+      // === CONDITIONS ===
+      if (devis.conditions && (devis.conditions.delaiExecution || devis.conditions.conditionsPaiement)) {
+        if (y > pageHeight - 45) {
+          doc.addPage();
+          y = 20;
+        }
+
+        doc.setFont('helvetica', 'bold');
         doc.setFontSize(10);
-        doc.text(`Acompte demandé: ${formatCurrency(devis.totaux.acompteTTC)}`, pageWidth - 75, y);
+        doc.setTextColor(...DARK);
+        doc.text('Conditions', margin, y);
         y += 6;
-        doc.text(`Reste à payer: ${formatCurrency(devis.totaux.resteAPayer || 0)}`, pageWidth - 75, y);
-        y += 10;
-      }
 
-      // Conditions
-      if (devis.conditions) {
-        y += 10;
-        doc.setFontSize(11);
-        doc.setTextColor(200, 150, 0);
-        doc.text('CONDITIONS', margin, y);
-        y += 8;
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...DARK);
 
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
+        if (devis.conditions.delaiExecution) {
+          doc.text(`Délai d'exécution: ${devis.conditions.delaiExecution}`, margin + 2, y);
+          y += 5;
+        }
+        if (devis.conditions.conditionsPaiement) {
+          doc.text(`Conditions de paiement: ${devis.conditions.conditionsPaiement}`, margin + 2, y);
+          y += 5;
+        }
+        if (devis.conditions.modalitesPaiement?.length) {
+          doc.text(`Modalités: ${devis.conditions.modalitesPaiement.join(', ')}`, margin + 2, y);
+          y += 5;
+        }
         
-        const conditions = [
-          `Validité du devis: ${devis.conditions.validite} jours`,
-          `Délai d'exécution: ${devis.conditions.delaiExecution}`,
-          `Conditions de paiement: ${devis.conditions.conditionsPaiement}`,
-          devis.conditions.modalitesPaiement?.length > 0 && 
-            `Modalités de paiement: ${devis.conditions.modalitesPaiement.join(', ')}`
-        ].filter(Boolean);
-
-        conditions.forEach(condition => {
-          if (condition) {
-            doc.text(condition, margin, y);
-            y += 6;
-          }
-        });
+        y += 5;
       }
 
-      // Commentaires
+      // === COMMENTAIRES ===
       if (devis.commentaires) {
-        y += 10;
-        doc.setFontSize(11);
-        doc.setTextColor(0, 100, 150);
-        doc.text('COMMENTAIRES', margin, y);
-        y += 8;
+        if (y > pageHeight - 35) {
+          doc.addPage();
+          y = 20;
+        }
 
-        doc.setFontSize(9);
-        doc.setTextColor(0, 0, 0);
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(10);
+        doc.setTextColor(...DARK);
+        doc.text('Commentaires', margin, y);
+        y += 6;
+
+        doc.setFont('helvetica', 'normal');
+        doc.setFontSize(8);
+        doc.setTextColor(...DARK);
         
-        // Découper les commentaires en lignes
-        const commentLines = doc.splitTextToSize(devis.commentaires, pageWidth - 2 * margin);
+        const commentLines = doc.splitTextToSize(devis.commentaires, contentWidth);
         commentLines.forEach((line: string) => {
-          if (y > pageHeight - 30) {
+          if (y > pageHeight - 25) {
             doc.addPage();
             y = 20;
           }
           doc.text(line, margin, y);
-          y += 5;
+          y += 4;
         });
+        
+        y += 6;
       }
 
-      // Mentions légales en bas de page
-      const footerY = pageHeight - 30;
-      doc.setFontSize(7);
-      doc.setTextColor(100, 100, 100);
+      // === MENTIONS LÉGALES ===
+      const mentionsPersonnalisees = getMentionsPersonnalisees();
+      const nbLignesMentions = 3 + mentionsPersonnalisees.length;
+      const espaceMentions = nbLignesMentions * 4 + 15;
       
-      const mentions = [
-        `Ce devis est valable ${devis.conditions?.validite || 30} jours à compter de sa date d'émission.`,
-        `L'acceptation du présent devis implique l'adhésion entière aux conditions générales de vente.`,
+      if (y > pageHeight - espaceMentions) {
+        doc.addPage();
+        y = 20;
+      }
+
+      doc.setDrawColor(...LIGHT);
+      doc.line(margin, y, pageWidth - margin, y);
+      y += 6;
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9);
+      doc.setTextColor(...DARK);
+      doc.text('Mentions légales', margin, y);
+      y += 5;
+      
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7);
+      doc.setTextColor(...MEDIUM);
+      
+      // Mentions obligatoires
+      const mentionsObligatoires = [
+        `Ce devis est valable ${devis.conditions?.validite || 30} jours. L'acceptation implique l'adhésion aux CGV.`,
         devis.entreprise.formeJuridique === 'Auto-entrepreneur' && 
           'TVA non applicable, art. 293 B du CGI (régime micro-entrepreneur).',
-        'En cas de retard de paiement, des pénalités de retard au taux de 3 fois le taux d\'intérêt légal seront applicables.'
+        'Pénalités de retard: 3x le taux d\'intérêt légal + indemnité forfaitaire de 40€.'
       ].filter(Boolean);
 
-      mentions.forEach((mention, index) => {
+      mentionsObligatoires.forEach((mention) => {
         if (mention) {
-          doc.text(mention, margin, footerY + index * 4);
+          const lines = doc.splitTextToSize(mention, contentWidth - 3);
+          lines.forEach((line: string) => {
+            if (y > pageHeight - 10) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.text(line, margin, y);
+            y += 3.5;
+          });
         }
       });
 
-      // Sauvegarder le PDF
+      // Mentions personnalisées
+      if (mentionsPersonnalisees.length > 0) {
+        y += 1;
+        mentionsPersonnalisees.forEach((mention) => {
+          const lines = doc.splitTextToSize(mention, contentWidth - 3);
+          lines.forEach((line: string) => {
+            if (y > pageHeight - 10) {
+              doc.addPage();
+              y = 20;
+            }
+            doc.text(line, margin, y);
+            y += 3.5;
+          });
+        });
+      }
+
+      // Numéro de page
+      const totalPages = doc.internal.pages.length - 1;
+      for (let i = 1; i <= totalPages; i++) {
+        doc.setPage(i);
+        doc.setFontSize(7);
+        doc.setTextColor(...LIGHT);
+        doc.text(
+          `Page ${i} / ${totalPages}`, 
+          pageWidth / 2, 
+          pageHeight - 8, 
+          { align: 'center' }
+        );
+      }
+
       doc.save(`${devis.numero}.pdf`);
       
     } catch (error) {
