@@ -1,10 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileText, History, Eye, Settings as SettingsIcon } from 'lucide-react';
 import { DevisForm } from './components/DevisForm';
 import { DevisPreview } from './components/DevisPreview';
 import { DevisHistory } from './components/DevisHistory';
 import { DevisExport } from './components/DevisExport';
 import { Settings } from './components/Settings';
+import { getLogo } from './utils/storage';
 import type { Devis } from './types/devis';
 
 type AppView = 'form' | 'preview' | 'history' | 'settings' | 'edit';
@@ -13,6 +14,21 @@ function App() {
   const [currentView, setCurrentView] = useState<AppView>('form');
   const [selectedDevis, setSelectedDevis] = useState<Devis | null>(null);
   const [editingDevis, setEditingDevis] = useState<Devis | null>(null);
+  const [logoUrl, setLogoUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Charger le logo au démarrage
+    const logo = getLogo();
+    setLogoUrl(logo);
+  }, []);
+
+  // Recharger le logo quand on revient de Settings
+  useEffect(() => {
+    if (currentView === 'preview' || currentView === 'form') {
+      const logo = getLogo();
+      setLogoUrl(logo);
+    }
+  }, [currentView]);
 
   const handleDevisCreated = (devis: Devis) => {
     setSelectedDevis(devis);
@@ -123,7 +139,7 @@ function App() {
                 </button>
               </div>
             </div>
-            <DevisPreview devis={selectedDevis} />
+            <DevisPreview devis={selectedDevis} logoUrl={logoUrl || undefined} />
           </div>
         )}
         
