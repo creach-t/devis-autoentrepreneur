@@ -1,7 +1,7 @@
 import React from 'react';
 import { Download, Eye, Printer } from 'lucide-react';
 import { formatCurrency, getTVABreakdown } from '../utils/calculations';
-import { getMentionsPersonnalisees } from '../utils/storage';
+import { getMentionsPersonnalisees, getLogo } from '../utils/storage';
 import { PDF_COLORS, DIMENSIONS, TABLE_CONFIG, FONTS, SPACING } from '../styles/devisTheme';
 import type { Devis } from '../types/devis';
 
@@ -31,7 +31,28 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       doc.rect(0, 0, DIMENSIONS.accentBarWidth, pageHeight, 'F');
 
       // === ZONE LOGO ===
-      y += SPACING.xxl;
+      const logoUrl = getLogo();
+      if (logoUrl) {
+        try {
+          // Ajouter le logo
+          doc.addImage(
+            logoUrl,
+            'PNG',
+            margin,
+            y,
+            DIMENSIONS.logoWidth,
+            DIMENSIONS.logoHeight,
+            undefined,
+            'FAST'
+          );
+          y += DIMENSIONS.logoHeight + SPACING.xxl;
+        } catch (logoError) {
+          console.warn('Erreur ajout logo au PDF:', logoError);
+          y += SPACING.xxl;
+        }
+      } else {
+        y += SPACING.xxl;
+      }
 
       // === EN-TÊTE ===
       doc.setFontSize(FONTS.sizes.title);
@@ -173,39 +194,57 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       y += TABLE_CONFIG.header.height + 2;
       doc.setFont('helvetica', 'normal');
 
-      // Lignes prestations
+      // Lignes prestations avec désignation multi-lignes
       let alternate = false;
       devis.prestations.forEach((prestation) => {
-        if (y > pageHeight - 50) {
+        doc.setFontSize(TABLE_CONFIG.body.fontSize);
+        
+        // Calculer les lignes de désignation
+        const designationLines = doc.splitTextToSize(prestation.designation, 85);
+        const lineCount = Math.min(designationLines.length, 3); // Max 3 lignes par prestation
+        const rowHeight = Math.max(TABLE_CONFIG.body.rowHeight, lineCount * 4.5);
+        
+        // Vérifier si on doit changer de page
+        if (y + rowHeight > pageHeight - 50) {
           doc.addPage();
           y = 20;
           alternate = false;
         }
 
+        // Fond alterné
         if (alternate) {
           doc.setFillColor(...TABLE_CONFIG.body.altRowColor);
-          doc.rect(margin, y - 3, contentWidth, TABLE_CONFIG.body.rowHeight, 'F');
+          doc.rect(margin, y - 3, contentWidth, rowHeight, 'F');
         }
 
-        doc.setFontSize(TABLE_CONFIG.body.fontSize);
         doc.setTextColor(...TABLE_CONFIG.body.textColor);
         
-        const designation = prestation.designation.length > 38 
-          ? prestation.designation.substring(0, 38) + '...' 
-          : prestation.designation;
+        // Désignation multi-lignes (max 3 lignes)
+        const displayLines = designationLines.slice(0, 3);
+        let lineY = y + 1;
+        displayLines.forEach((line: string, idx: number) => {
+          if (idx === 2 && designationLines.length > 3) {
+            // Si tronqué, ajouter "..."
+            doc.text(line.substring(0, line.length - 3) + '...', margin + 2, lineY);
+          } else {
+            doc.text(line, margin + 2, lineY);
+          }
+          lineY += 4;
+        });
         
-        doc.text(designation, margin + 2, y + 1);
-        doc.text(prestation.quantite.toString(), margin + 97, y + 1);
-        doc.text(prestation.uniteMesure, margin + 110, y + 1);
-        doc.text(formatCurrency(prestation.prixUnitaireHT), margin + 130, y + 1);
-        doc.text(`${prestation.tauxTVA}%`, margin + 150, y + 1);
+        // Autres colonnes centrées verticalement
+        const centerY = y + (rowHeight / 2) + 1;
+        doc.text(prestation.quantite.toString(), margin + 97, centerY);
+        doc.text(prestation.uniteMesure, margin + 110, centerY);
+        doc.text(formatCurrency(prestation.prixUnitaireHT), margin + 130, centerY);
+        doc.text(`${prestation.tauxTVA}%`, margin + 150, centerY);
         
         doc.setTextColor(...PDF_COLORS.textPrimary);
         doc.setFont('helvetica', 'bold');
-        doc.text(formatCurrency(prestation.totalHT), pageWidth - margin - 2, y + 1, { align: 'right' });
+        doc.text(formatCurrency(prestation.totalHT), pageWidth - margin - 2, centerY, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         
-        y += TABLE_CONFIG.body.rowHeight;
+        y += rowHeight;
         alternate = !alternate;
       });
 
@@ -297,7 +336,6 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
           y = 20;
         }
 
-        // Calculer la hauteur de la boîte conditions
         let conditionsCount = 0;
         if (devis.conditions.delaiExecution) conditionsCount++;
         if (devis.conditions.conditionsPaiement) conditionsCount++;
@@ -306,11 +344,9 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         const conditionsHeight = 5 + (conditionsCount * 4) + 8;
         const conditionsBoxY = y;
 
-        // Fond coloré
         doc.setFillColor(254, 243, 199);
         doc.rect(margin, conditionsBoxY, contentWidth, conditionsHeight, 'F');
         
-        // Bordure gauche
         doc.setDrawColor(245, 158, 11);
         doc.setLineWidth(1);
         doc.line(margin, conditionsBoxY, margin, conditionsBoxY + conditionsHeight);
@@ -356,11 +392,9 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         const commentsLines = doc.splitTextToSize(devis.commentaires, contentWidth - 8);
         const commentsHeight = 5 + (commentsLines.length * 4) + 8;
 
-        // Fond bleu
         doc.setFillColor(219, 234, 254);
         doc.rect(margin, commentsBoxY, contentWidth, commentsHeight, 'F');
         
-        // Bordure gauche
         doc.setDrawColor(37, 99, 235);
         doc.setLineWidth(1);
         doc.line(margin, commentsBoxY, margin, commentsBoxY + commentsHeight);
@@ -411,7 +445,6 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
       doc.setFontSize(FONTS.sizes.tiny);
       doc.setTextColor(...PDF_COLORS.textMuted);
       
-      // Mentions obligatoires
       const mentionsObligatoires = [
         `Ce devis est valable ${devis.conditions?.validite || 30} jours. L'acceptation implique l'adhésion aux CGV.`,
         devis.entreprise.formeJuridique === 'Auto-entrepreneur' && 
@@ -433,7 +466,6 @@ export function DevisExport({ devis, onClose }: DevisExportProps) {
         }
       });
 
-      // Mentions personnalisées
       if (mentionsPersonnalisees.length > 0) {
         y += 1;
         mentionsPersonnalisees.forEach((mention) => {
